@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
+	"net/http"
+	"tutorial/web-api/routes"
 )
 
 type album struct {
@@ -23,6 +23,7 @@ var albums = []album{
 func main() {
 	router := gin.Default()
 
+	routes.ReadAlbumsFromDisk()
 	router.GET("/albums", getAlbums)
 	router.POST("albums", postAlbums)
 	router.GET("/albums/:id", getAlbumById)
