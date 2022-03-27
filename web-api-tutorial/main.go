@@ -53,8 +53,7 @@ func connect() (context.Context, *mongo.Client) {
 	}()
 
 	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
-		panic(err)
-		log.Fatal("Error pinging db client")
+		log.Fatalf("Error pinging db client with err: %s", err)
 	}
 
 	fmt.Println("Successfully connected and pinged client")
