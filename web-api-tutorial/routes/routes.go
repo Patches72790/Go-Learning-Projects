@@ -1,51 +1,86 @@
 package routes
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
-	"io/ioutil"
-	"log"
-	"os"
+	"time"
+
+	"net/http"
+
+	"tutorial/web-api/config"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
-func WriteAlbumsToDisk(albums []Album) gin.HandlerFunc {
+var albumCollection = config.GetDBCollection(config.DB, "AlbumInfo")
 
-	fmt.Println("writing albums to disk")
+var albums = []Album{
+	{ID: "1", Title: "Blue Train", Artist: "John Coltrane", Price: 56.99},
+	{ID: "2", Title: "Jeru", Artist: "Gerry Mulligan", Price: 17.99},
+	{ID: "3", Title: "Sarah Vaughan and Clifford Brown", Artist: "Sarah Vaughan", Price: 39.99},
+}
+
+func GetAlbums() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var albums, _ = c.Get("albums")
-		if albums == nil {
-			return
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		var albums []Album
+		results, err := albumCollection.Find(ctx, bson.M{})
+
+		if err != nil {
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "Albums Not Found"})
 		}
 
-		var cast_albums = albums.([]Album)
+		defer results.Close(ctx)
+		for results.TryNext(ctx) {
+			var album Album
+			if err = results.Decode(&album); err != nil {
+				c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "Error retrieving album"})
+			}
 
-		j, _ := json.Marshal(cast_albums)
-
-		error := os.WriteFile("./albums2.json", j, 777)
-		if error != nil {
-			log.Fatal(error)
+			albums = append(albums, album)
 		}
 
-		fmt.Println("writing albums to disk")
-		c.Next()
+		c.IndentedJSON(http.StatusOK, albums)
 	}
 }
 
-func ReadAlbumsFromDisk() []Album {
-	jsonFile, err := os.Open("./albums.json")
-	if err != nil {
-		fmt.Println(err)
+func PostAlbums() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		newAlbum := Album{
+			ID:     "4",
+			Title:  "Electric LadyLand",
+			Artist: "Jimi Hendrix",
+			Price:  13.99,
+		}
+
+		result, err := albumCollection.InsertOne(ctx, newAlbum)
+		if err != nil {
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "Error posting album"})
+			return
+		}
+
+		c.IndentedJSON(http.StatusCreated, result)
 	}
+}
 
-	defer jsonFile.Close()
+func GetAlbumById() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := c.Param("id")
 
-	bytes, _ := ioutil.ReadAll(jsonFile)
+		for _, a := range albums {
+			if a.ID == id {
+				c.IndentedJSON(http.StatusOK, a)
+				return
+			}
+		}
 
-	var result []Album
-
-	json.Unmarshal([]byte(bytes), &result)
-
-	return result
+		var errorMessage = fmt.Sprintf("album not found with id %s", id)
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": errorMessage})
+	}
 }
