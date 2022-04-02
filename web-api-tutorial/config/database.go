@@ -3,13 +3,14 @@ package config
 import (
 	"context"
 	"fmt"
+	"log"
+	"os"
+	"time"
+
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"log"
-	"os"
-	"time"
 )
 
 func ConnectDB() *mongo.Client {
@@ -23,7 +24,7 @@ func ConnectDB() *mongo.Client {
 
 	DB_URI := fmt.Sprintf("%s", os.Getenv("MONGO_ATLAS_URI"))
 
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(DB_URI))
+	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(DB_URI))
 	if err != nil {
 		panic(err)
 	}
@@ -34,7 +35,7 @@ func ConnectDB() *mongo.Client {
 		}
 	}()
 
-	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
+	if err := client.Ping(context.Background(), readpref.Primary()); err != nil {
 		log.Fatalf("Error pinging db client with err: %s", err)
 	}
 

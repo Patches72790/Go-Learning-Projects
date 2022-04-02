@@ -7,13 +7,12 @@ import (
 
 	"net/http"
 
-	"tutorial/web-api/config"
-
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
+	"tutorial/web-api/config"
 )
 
-var albumCollection = config.GetDBCollection(config.DB, "AlbumInfo")
+var albumCollection = config.GetDBCollection(config.DB, "collection")
 
 var albums = []Album{
 	{ID: "1", Title: "Blue Train", Artist: "John Coltrane", Price: 56.99},
@@ -33,6 +32,7 @@ func GetAlbums() gin.HandlerFunc {
 			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "Albums Not Found"})
 		}
 
+		fmt.Printf("results: %v\n", results)
 		defer results.Close(ctx)
 		for results.TryNext(ctx) {
 			var album Album
