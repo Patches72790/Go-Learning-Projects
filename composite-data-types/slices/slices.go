@@ -2,6 +2,7 @@ package slices
 
 import (
 	"fmt"
+	"testing"
 )
 
 func reverse(s []int) []int {
@@ -78,5 +79,9 @@ func TestSlices() {
 	)
 
 	// append
+
+}
+
+func TestSlicesReal(t *testing.T) {
 
 }
