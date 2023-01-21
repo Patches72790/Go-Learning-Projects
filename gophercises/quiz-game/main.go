@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/csv"
+	"flag"
 	"fmt"
 	"os"
 	"strings"
@@ -19,7 +20,7 @@ func parse_csv_from_string(contents string) [][]string {
 	return result
 }
 
-func apply_questions(csv_lines [][]string) {
+func apply_questions(csv_lines [][]string, time_limit int) {
 
 	var correct int
 	total := len(csv_lines)
@@ -56,19 +57,7 @@ func read_answer() string {
 func main() {
 
 	// parse command line input
-	args := os.Args[1:]
-	var filename string
-
-	if len(args) == 0 {
-		filename = "problems.csv"
-	} else if len(args) > 1 {
-		fmt.Println("Usage: ./quiz-game [filename]")
-		fmt.Printf("\t-csv string\n\t\ta csv file in format 'question,answer' (default 'problems.csv')\n")
-		fmt.Printf("\t-limit int\n\t\tthe time limit for the quiz in seconds\n")
-		os.Exit(2)
-	} else {
-		filename = args[0]
-	}
+	filename, limit := parse_flags()
 
 	file, err := os.ReadFile(filename)
 	if err != nil {
@@ -82,8 +71,16 @@ func main() {
 	csv_lines := parse_csv_from_string(contents)
 
 	// apply operators and check that answer is correct or not keeping track of totals
-	apply_questions(csv_lines)
+	apply_questions(csv_lines, limit)
+}
 
-	// print out result once finished
+func parse_flags() (string, int) {
+	filename := flag.String("csv", "problems.csv",
+		"\t-csv string\n\t\ta csv file in format 'question,answer' (default 'problems.csv')\n")
 
+	limit := flag.Int("limit", 30, "\t-limit int\n\t\tthe time limit for the quiz in seconds\n")
+
+	flag.Parse()
+
+	return *filename, *limit
 }
