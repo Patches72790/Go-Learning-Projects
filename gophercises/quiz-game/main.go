@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
 func parse_csv_from_string(contents string) [][]string {
@@ -24,7 +25,23 @@ func apply_questions(csv_lines [][]string, time_limit int) {
 
 	var correct int
 	total := len(csv_lines)
+	reset := make(chan bool)
+
 	for i, qa_pair := range csv_lines {
+		reached_limit := time.After(time.Duration(time_limit) * time.Second)
+		go func() {
+			for {
+				select {
+				case <-reached_limit:
+					fmt.Println("\nReached time limit... Stopping quiz game.")
+					os.Exit(1)
+				case <-reset:
+					fmt.Println("\nResetting timer...")
+					return
+				}
+			}
+		}()
+
 		question := qa_pair[0]
 		answer := qa_pair[1]
 		fmt.Printf("Problem #%v: %v = ", i, question)
@@ -33,17 +50,20 @@ func apply_questions(csv_lines [][]string, time_limit int) {
 		if input == answer {
 			correct += 1
 		}
+		reset <- true
 	}
 
 	fmt.Printf("You scored %v out of %v.\n", correct, total)
 }
 
+/*
+Reads a line of text from the terminal
+to be passed to the quiz game for checking
+against the answer.
+*/
 func read_answer() string {
-
 	reader := bufio.NewReader(os.Stdin)
-
 	line, _, err := reader.ReadLine()
-
 	cleaned_line := strings.Trim(string(line), " ")
 
 	if err != nil {
