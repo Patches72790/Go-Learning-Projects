@@ -19,7 +19,6 @@ func main() {
 	config.ConnectDB()
 
 	router := gin.Default()
-
 	router.GET("/albums", routes.GetAlbums())
 	router.POST("/albums", routes.PostAlbums())
 	router.GET("/albums/:id", routes.GetAlbumById())

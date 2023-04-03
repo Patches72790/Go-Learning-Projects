@@ -23,17 +23,20 @@ func ConnectDB() *mongo.Client {
 	defer cancel()
 
 	DB_URI := fmt.Sprintf("%s", os.Getenv("MONGO_ATLAS_URI"))
+	USERNAME := os.Getenv("MONGO_DB_USERNAME")
+	PW := os.Getenv("MONGO_DB_PASS")
 
-	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(DB_URI))
+	clientOptions := options.Client().ApplyURI("mongodb+srv://" +
+		USERNAME +
+		":" +
+		PW +
+		"@" +
+		DB_URI)
+
+	client, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
 		panic(err)
 	}
-
-	defer func() {
-		if err = client.Disconnect(context.TODO()); err != nil {
-			panic(err)
-		}
-	}()
 
 	if err := client.Ping(context.Background(), readpref.Primary()); err != nil {
 		log.Fatalf("Error pinging db client with err: %s", err)
