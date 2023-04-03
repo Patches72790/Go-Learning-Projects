@@ -1,37 +1,79 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
-	"math"
+	"os"
+	"strings"
 )
 
-type Thing interface {
-	Do()
+type ByteCounter int
+
+type WordCounter int
+
+type LineCounter int
+
+func (c *ByteCounter) Write(p []byte) (int, error) {
+	*c += ByteCounter(len(p))
+	return len(p), nil
 }
 
-type Point struct {
-	x, y float64
+func (c *ByteCounter) String() string {
+	return fmt.Sprintf("%v", *c)
 }
 
-func (p *Point) Distance() float64 {
-	return math.Abs(p.x - p.y)
-}
+func (c *WordCounter) Write(p []byte) (int, error) {
 
-type Shape struct {
-	Point
-}
-
-func (s *Shape) Do() {
-	fmt.Println("Shape is doing its thing")
-}
-
-func DoThings(things []Thing) {
-	for _, t := range things {
-		t.Do()
+	var words_count int
+	scanner := bufio.NewScanner(strings.NewReader(string(p)))
+	scanner.Split(bufio.ScanWords)
+	for scanner.Scan() {
+		words_count = words_count + 1
 	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Fprintln(os.Stderr, "error reading input:", err)
+	}
+
+	*c += WordCounter(words_count)
+	return words_count, nil
+}
+func (c *WordCounter) String() string {
+	return fmt.Sprintf("%v", *c)
+}
+
+func (c *LineCounter) Write(p []byte) (int, error) {
+	count := scanStuff(p, bufio.ScanWords)
+	*c += LineCounter(count)
+	return count, nil
+}
+
+func scanStuff(p []byte, fn bufio.SplitFunc) int {
+	var count int
+	scanner := bufio.NewScanner(strings.NewReader(string(p)))
+	scanner.Split(fn)
+
+	for scanner.Scan() {
+		count++
+	}
+
+	return count
+}
+func (c *LineCounter) String() string {
+	return fmt.Sprintf("%v", *c)
 }
 
 func main() {
-	var things = []Thing{&Shape{Point{x: 1, y: 2}}, &Shape{Point{x: 2, y: 3}}}
-	DoThings(things)
+
+	var c ByteCounter
+	c.Write([]byte("Hello"))
+	fmt.Println(c.String())
+
+	var wc WordCounter
+	wc.Write([]byte("Hello my name is Stradivarius, and I play the violin"))
+	fmt.Println(wc.String())
+
+	var lc LineCounter
+	lc.Write([]byte("Hello\nmy\nname\nis\nStradivarius,\nand\nI\nplay\nthe\nviolin\n"))
+	fmt.Println(lc)
 }
