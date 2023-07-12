@@ -118,6 +118,8 @@ func (c *FtpConn) cwd(args []string) {
 	}
 
 	c.WorkDir = workDir
+
+	fmt.Fprintf(c.conn, "%s%s", workDir, c.EOL())
 	c.status(status200)
 }
 

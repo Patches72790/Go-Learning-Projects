@@ -18,22 +18,29 @@ func main() {
 	}
 
 	defer conn.Close()
-	fmt.Printf("Dialed to %v from %v\n", conn.RemoteAddr(), conn.LocalAddr())
 
+	fmt.Printf("ftp> ")
 	for {
-		fmt.Printf("ftp> ")
-
-		reader := bufio.NewReader(os.Stdin)
-		s, _ := reader.ReadString('\n')
-		buf := bytes.NewBuffer([]byte(s))
-		io.Copy(conn, buf)
-
-		buffer := make([]byte, 256)
-		_, e := conn.Read(buffer)
-		if e != nil {
-			fmt.Println("Error: %v", e)
-		}
-
-		fmt.Println(string(buffer))
+		write(&conn)
+		go read(&conn)
 	}
+}
+func write(conn *net.Conn) error {
+
+	reader := bufio.NewReader(os.Stdin)
+	s, _ := reader.ReadString('\n')
+	buf := bytes.NewBuffer([]byte(s))
+	_, e := io.Copy(*conn, buf)
+
+	return e
+}
+
+func read(conn *net.Conn) {
+	buffer := make([]byte, 1024)
+
+	(*conn).Read(buffer)
+
+	fmt.Println()
+	fmt.Println(string(buffer))
+	fmt.Printf("ftp> ")
 }
